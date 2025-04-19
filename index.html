@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TorrentGO</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-color: #f5f7fa;
+      --surface-color: #ffffff;
+      --primary-color: #5c6bc0;
+      --primary-hover: #3f51b5;
+      --text-color: #2e3a59;
+      --muted-color: #7a8198;
+      --tag-bg: #e8eaf6;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+      --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+      --radius-md: 12px;
+      --breakpoint-md: 768px;
+      --breakpoint-sm: 480px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-color: #121212;
+        --surface-color: #1f1f1f;
+        --primary-color: #7986cb;
+        --primary-hover: #5c6bc0;
+        --text-color: #e0e0e0;
+        --muted-color: #8a8a8a;
+        --tag-bg: #2a2a2a;
+        --shadow-sm: 0 1px 3px rgba(0,0,0,0.5);
+        --shadow-md: 0 4px 6px rgba(0,0,0,0.5);
+      }
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      line-height: 1.6;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 1rem; }
+    header { background: var(--surface-color); padding: 1rem 0; box-shadow: var(--shadow-sm); position: sticky; top: 0; z-index: 1000; }
+    .header-inner { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+    .logo { font-size: 1.875rem; font-weight: 700; color: var(--primary-color); }
+    .controls { display: flex; align-items: center; width: 280px; }
+    .search-bar { width: 100%; padding: 0.75rem 1rem; border: none; border-radius: var(--radius-md); background: var(--bg-color); color: var(--text-color); font-size: 0.95rem; box-shadow: var(--shadow-sm); }
+    .search-bar::placeholder { color: var(--muted-color); }
+    .filter-toggle { display: none; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-color); }
+    .filters-container { overflow-x: auto; padding: 0.75rem 0; transition: max-height 0.3s ease; }
+    .filters { display: flex; flex-wrap: nowrap; gap: 0.75rem; }
+    .filter-btn { flex: 0 0 auto; padding: 0.75rem 1.25rem; border: 2px solid var(--primary-color); border-radius: var(--radius-md); background: transparent; cursor: pointer; transition: background 0.3s, color 0.3s, transform 0.2s; color: var(--primary-color); font-weight: 500; }
+    .filter-btn:hover { transform: translateY(-2px); background: var(--tag-bg); }
+    .filter-btn.active { background: var(--primary-color); color: #fff; border-color: var(--primary-hover); }
+    main { padding-bottom: 2rem; }
+    .game-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 2rem; }
+    .game-card { background: var(--surface-color); border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; transition: transform 0.3s, box-shadow 0.3s; }
+    .game-card:hover { transform: translateY(-6px); box-shadow: var(--shadow-md); }
+    .game-card img { width: 100%; height: auto; aspect-ratio: 16/9; object-fit: cover; }
+    .game-info { padding: 1.25rem; flex: 1; display: flex; flex-direction: column; }
+    .game-title { font-size: 1.25rem; margin-bottom: 0.75rem; font-weight: 700; }
+    .game-tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+    .game-tag { font-size: 0.75rem; background: var(--tag-bg); padding: 0.25rem 0.75rem; border-radius: var(--radius-md); color: var(--text-color); font-weight: 500; }
+    .download-btn { margin-top: auto; padding: 0.75rem; text-align: center; background: var(--primary-color); color: #fff; text-decoration: none; border-radius: var(--radius-md); font-weight: 600; transition: background 0.3s, transform 0.2s; }
+    .download-btn:hover { background: var(--primary-hover); transform: scale(1.02); }
+    @media (max-width: var(--breakpoint-md)) {
+      .header-inner { flex-direction: column; align-items: stretch; }
+      .controls { width: 100%; order: 2; }
+      .search-bar { font-size: 1rem; }
+      .filter-toggle { display: block; order: 1; align-self: flex-end; }
+      .filters-container { position: absolute; top: 70px; left: 0; right: 0; background: var(--surface-color); max-height: 0; overflow: hidden; z-index: 999; }
+      .filters-container.open { max-height: 200px; }
+      .game-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+    }
+    @media (max-width: var(--breakpoint-sm)) { header, .container { padding: 0 0.75rem; } .game-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container header-inner">
+      <div class="logo">TorrentGO</div>
+      <button id="filterToggle" class="filter-toggle" aria-label="Abrir filtros">☰</button>
+      <div class="controls">
+        <input type="text" id="search" class="search-bar" placeholder="Buscar jogos..." aria-label="Buscar jogos">
+      </div>
+    </div>
+  </header>
+  <div class="filters-container" id="filtersContainer" aria-label="Filtros de categorias">
+    <div class="filters container" id="filterContainer"></div>
+  </div>
+  <main class="container">
+    <section class="game-grid" id="gameGrid" aria-live="polite" aria-label="Lista de jogos"></section>
+  </main>
+  <script>
+    const games = [
+      { id: 1, title: 'Mortal Kombat 1', img: 'https://image.api.playstation.com/vulcan/ap/rnd/202305/1515/20830c86815b15a302ffd9796ef7d754f2b69ff69790dbc8.jpg', tags: ['Fighting', 'Aventura', 'Ação'], download: 'magnet:?xt=urn:btih:DDE20C57815CD3967065D1326157229954785F87&dn=Mortal+Kombat+1+%5bFitGirl+Repack%5d' },
+      { id: 2, title: 'Minicraft PE', img: 'https://t.ctcdn.com.br/JMn1WWqSmVBiW0De3uBecB-hF9k=/640x360/smart/i498382.jpeg', tags: ['Aventura', 'Exploração', 'Mobile'], download: 'https://file.minecrftdownload.com/minecraftapk-latest-version-minecrftdownload.com.apk' }
+    ];
+    const filterContainer = document.getElementById('filterContainer');
+    const gameGrid = document.getElementById('gameGrid');
+    const searchInput = document.getElementById('search');
+    const filtersContainer = document.getElementById('filtersContainer');
+    const filterToggle = document.getElementById('filterToggle');
+
+    const allTags = [...new Set(games.flatMap(g => g.tags))];
+    allTags.forEach(tag => {
+      const btn = document.createElement('button');
+      btn.className = 'filter-btn';
+      btn.textContent = tag;
+      btn.setAttribute('aria-pressed', 'false');
+      btn.addEventListener('click', () => {
+        if (tag === 'Mobile') {
+          alert('Esta categoria não está disponível em torrent, somente em .apk');
+        }
+        btn.classList.toggle('active');
+        renderGames();
+      });
+      filterContainer.appendChild(btn);
+    });
+
+    searchInput.addEventListener('input', renderGames);
+    filterToggle.addEventListener('click', () => filtersContainer.classList.toggle('open'));
+
+    function renderGames() {
+      const query = searchInput.value.trim().toLowerCase();
+      const activeTags = Array.from(filterContainer.querySelectorAll('.filter-btn.active')).map(b => b.textContent);
+      gameGrid.innerHTML = '';
+      const filtered = games.filter(g => g.title.toLowerCase().includes(query) && activeTags.every(t => g.tags.includes(t)));
+      if (!filtered.length) {
+        gameGrid.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: var(--muted-color);">Nenhum jogo encontrado.</p>`;
+        return;
+      }
+      filtered.forEach(g => {
+        const card = document.createElement('article');
+        card.className = 'game-card';
+        card.innerHTML = `
+          <img src="${g.img}" alt="Capa de ${g.title}" />
+          <div class="game-info">
+            <h2 class="game-title">${g.title}</h2>
+            <div class="game-tags">${g.tags.map(t => `<span class="game-tag">${t}</span>`).join('')}</div>
+            <a href="${g.download}" class="download-btn" aria-label="Baixar ${g.title}">Baixar</a>
+          </div>`;
+        gameGrid.appendChild(card);
+      });
+    }
+    renderGames();
+  </script>
+</body>
+</html>
